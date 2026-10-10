@@ -29,7 +29,7 @@ class ForgeSettings extends ChangeNotifier {
   String themeId = 'oakforge';
   int bladeStyle = 0;
   int targetStyle = 0;
-  bool isPro = false;
+  bool isPro = true; // everything unlocked — no Pro version
 
   // Lifetime stats.
   int bestCampaignScore = 0;
