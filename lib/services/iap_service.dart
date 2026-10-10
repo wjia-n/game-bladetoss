@@ -15,6 +15,7 @@ class StoreService {
   static const coffeeId = 'bladetosscoffee';
   static const chocolateId = 'bladetosschocolate';
   static const productIds = {coffeeId, chocolateId};
+  ProductDetails? get proProduct => null; // Pro removed
 
   final InAppPurchase _iap = InAppPurchase.instance;
 
@@ -27,6 +28,7 @@ class StoreService {
 
   /// Callbacks the UI wires up.
   final ValueNotifier<String?> lastThanks = ValueNotifier(null);
+  final ValueNotifier<bool> proPurchased = ValueNotifier(true); // everything unlocked
   final ValueNotifier<bool> purchaseInProgress = ValueNotifier(false);
   final ValueNotifier<String?> purchaseError = ValueNotifier(null);
 
@@ -97,6 +99,10 @@ class StoreService {
   }
 
   
+  Future<void> buyPro() async {
+    // Pro removed.
+  }
+
   Future<void> buyTip(ProductDetails product) async {
     purchaseError.value = null;
     purchaseInProgress.value = true;
