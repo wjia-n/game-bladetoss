@@ -16,6 +16,9 @@ import 'package:audioplayers/audioplayers.dart';
 ///   resumes exactly where it left off.
 /// - Every public method catches player errors; audio can never crash the app.
 class ForgeAudio {
+  /// Per-game pitch character (bladetoss): 0.99x. Makes SFX unique.
+  static const double _pitchMul = 0.990;
+
   static const int _rate = 22050;
   final AudioPlayer _sfx = AudioPlayer();
   final AudioPlayer _music = AudioPlayer();
@@ -95,6 +98,8 @@ class ForgeAudio {
 
   List<double> _tone(double freq, double secs,
       {double freqEnd = 0, double attack = 0.02, double harmonics = 0.25}) {
+    freq *= _pitchMul;
+    freqEnd *= _pitchMul;
     final n = (_rate * secs).round();
     final out = List<double>.filled(n, 0);
     for (int i = 0; i < n; i++) {
@@ -182,54 +187,41 @@ class ForgeAudio {
       _cache.putIfAbsent(key, () => _wav(build()));
 
   Uint8List _menuBytes() => _clip('music_menu', () {
-        // Warm tavern loop: Am – F – C – G pads, 16s.
+        // D bass + melody 0 – 5 – 4 – 3, 16s loop. Unique to bladetoss.
+        final bassNotes = [73.42, 123.47, 110.00, 98.00];
+        final melNotes = [440.00, 739.98, 659.24, 587.32];
+        final out = List<double>.filled((_rate * 16).round(), 0);
+        final segLen = (_rate * 4).round();
+        for (int s = 0; s < 4; s++) {
+          final bass = _tone(bassNotes[s], 3.5, harmonics: 0.4);
+          final mel = _tone(melNotes[s], 1.2, harmonics: 0.25);
+          for (int i = 0; i < bass.length && s * segLen + i < out.length; i++) {
+            out[s * segLen + i] += bass[i] * 0.5;
+          }
+          final melStart = s * segLen + segLen ~/ 4;
+          for (int i = 0; i < mel.length && melStart + i < out.length; i++) {
+            out[melStart + i] += mel[i] * 0.35;
+          }
+        }
+        return out;
+      });
+
+
+  Uint8List _gameBytes() => _clip('music_game', () {
+        // D 0 – 5 – 4 – 3 warm pad, 16s loop. Unique to bladetoss.
         final seq = [
-          [220.0, 261.63, 329.63],
-          [174.61, 220.0, 261.63],
-          [261.63, 329.63, 392.0],
-          [196.0, 246.94, 293.66],
+          [146.83, 184.99, 220.00],
+          [246.94, 293.66, 369.99],
+          [220.00, 277.18, 329.62],
+          [195.99, 246.94, 293.66]
         ];
         final out = <double>[];
         for (final chord in seq) {
           out.addAll(_padChord(chord, 4.0));
         }
-        // A few plucked melody notes over the top.
-        final notes = [440.0, 523.25, 587.33, 523.25];
-        final n = (_rate * 16).round();
-        final full = List<double>.from(out);
-        for (int k = 0; k < notes.length; k++) {
-          final start = (n * (k * 4 + 2) / 16).round();
-          final tone = _tone(notes[k], 0.5, harmonics: 0.35);
-          for (int i = 0; i < tone.length && start + i < n; i++) {
-            full[start + i] += tone[i] * 0.3;
-          }
-        }
-        return full;
-      });
-
-  Uint8List _gameBytes() => _clip('music_game', () {
-        // Driving forge loop: low drum pulse + urgent plucks, 8s.
-        final n = (_rate * 8).round();
-        final out = List<double>.filled(n, 0);
-        // Drum pulse: low thump every beat (120 bpm).
-        final thump = _tone(90, 0.18, harmonics: 0.1);
-        for (int b = 0; b < 16; b++) {
-          final start = (n * b / 16).round();
-          for (int i = 0; i < thump.length && start + i < n; i++) {
-            out[start + i] += thump[i] * 0.55;
-          }
-        }
-        // Pentatonic plucks.
-        final plucks = [392.0, 440.0, 523.25, 440.0, 392.0, 329.63, 293.66, 329.63];
-        for (int k = 0; k < plucks.length; k++) {
-          final start = (n * k / plucks.length).round();
-          final tone = _tone(plucks[k], 0.32, harmonics: 0.4);
-          for (int i = 0; i < tone.length && start + i < n; i++) {
-            out[start + i] += tone[i] * 0.32;
-          }
-        }
         return out;
       });
+
 
   // ------------------------------------------------------------------ SFX
   Future<void> _play(Uint8List bytes) async {
