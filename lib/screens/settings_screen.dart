@@ -5,6 +5,7 @@ import '../services/audio_service.dart';
 import '../services/settings_service.dart';
 import '../theme/forge_art.dart';
 import '../theme/forge_themes.dart';
+import '../transfer/transfer_ui.dart';
 
 /// Blade Toss settings: audio, profile, difficulty, stats.
 class SettingsScreen extends StatelessWidget {
@@ -45,6 +46,7 @@ class SettingsScreen extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               children: [
+              TransferSaveTile(gameSlug: 'bladetoss'),
                 _Section(t, 'SOUND'),
                 _ToggleRow(
                   t: t,
